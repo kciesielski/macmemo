@@ -19,11 +19,8 @@ object MacMemoBuild extends Build {
 
   lazy val root: Project = Project(
     "root",
-    file("."),
-    settings = buildSettings ++ Seq(
-      run <<= run in Compile in examples
-    )
-  ) aggregate(macros, examples)
+    file(".")
+  ) aggregate macros
 
   lazy val macros: Project = Project(
     "macros",
@@ -31,14 +28,9 @@ object MacMemoBuild extends Build {
     settings = buildSettings ++ Seq(
       libraryDependencies ++= Seq(
         "org.scala-lang" % "scala-reflect" % ScalaVersion,
-        "com.google.guava" % "guava" % "13.0.1"))
+        "com.google.guava" % "guava" % "13.0.1",
+        "org.scalatest" % "scalatest_2.11" % "2.2.0" % "test"))
   )
-
-  lazy val examples: Project = Project(
-    "examples",
-    file("examples"),
-    settings = buildSettings
-  ) dependsOn(macros)
 
   // Enabling debug project-wide. Can't find a better way to pass options to scalac.
   System.setProperty("macmemo.debug", "true")
