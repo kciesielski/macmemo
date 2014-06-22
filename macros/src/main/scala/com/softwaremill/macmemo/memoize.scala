@@ -1,8 +1,11 @@
 package com.softwaremill.macmemo
 
 import scala.annotation.StaticAnnotation
+import scala.concurrent.duration.FiniteDuration
 import scala.language.experimental.macros
 
-class memoize extends StaticAnnotation {
+class memoize(val maxSize: Long, expiresAfter: FiniteDuration, val concurrencyLevel: Option[Int] = None)
+  extends StaticAnnotation {
+
   def macroTransform(annottees: Any*) = macro memoizeMacro.impl
 }

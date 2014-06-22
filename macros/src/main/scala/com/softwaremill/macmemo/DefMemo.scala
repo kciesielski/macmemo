@@ -4,13 +4,12 @@ import java.util.concurrent.TimeUnit
 
 import com.google.common.cache.CacheBuilder
 
-import scala.concurrent.duration.FiniteDuration
+class DefMemo[A <: List[_], R <: Object](maxSize: Long, expiresAfterMillis: Long, concurrencyLevel: Option[Int]) {
 
-class DefMemo[A <: List[_], R <: Object](concurrencyLevel: Int, maxSize: Long, ttl: FiniteDuration) {
-
-  lazy val cache = CacheBuilder.newBuilder()
-    .concurrencyLevel(concurrencyLevel)
+  lazy val builder = CacheBuilder.newBuilder()
     .maximumSize(maxSize)
-    .expireAfterWrite(ttl.toMillis, TimeUnit.MILLISECONDS)
-    .build[A, R]()
+    .expireAfterWrite(expiresAfterMillis, TimeUnit.MILLISECONDS)
+
+  lazy val cache = concurrencyLevel.map(level => builder.concurrencyLevel(level)).getOrElse(builder).build[A, R]()
+
 }
