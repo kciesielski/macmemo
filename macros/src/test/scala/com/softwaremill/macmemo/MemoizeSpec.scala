@@ -1,10 +1,9 @@
 package com.softwaremill.macmemo
 
-import com.softwaremill.macmemo.memoize
 import org.scalatest.{FlatSpec, Matchers}
 
-import scala.util.Random
 import scala.concurrent.duration._
+import scala.util.Random
 
 class ClassWithMemos {
 

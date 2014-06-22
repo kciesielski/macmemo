@@ -7,5 +7,5 @@ import scala.language.experimental.macros
 class memoize(val maxSize: Long, expiresAfter: FiniteDuration, val concurrencyLevel: Option[Int] = None)
   extends StaticAnnotation {
 
-  def macroTransform(annottees: Any*) = macro memoizeMacro.impl
+  def macroTransform(annottees: Any*): Any = macro memoizeMacro.impl
 }
