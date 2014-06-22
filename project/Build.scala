@@ -9,7 +9,31 @@ object BuildSettings {
     version := "0.1",
     scalacOptions ++= Seq(),
     scalaVersion := ScalaVersion,
-    resolvers += Resolver.sonatypeRepo("snapshots"),
+    // Sonatype OSS deployment
+    publishTo <<= version { (v: String) =>
+      val nexus = "https://oss.sonatype.org/"
+      if (v.trim.endsWith("SNAPSHOT"))
+        Some("snapshots" at nexus + "content/repositories/snapshots")
+      else
+        Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+    },
+    credentials   += Credentials(Path.userHome / ".ivy2" / ".credentials"),
+    publishMavenStyle := true,
+    publishArtifact in Test := false,
+    pomIncludeRepository := { _ => false },
+    pomExtra :=
+      <scm>
+        <url>git@github.com:kciesielski/macmemo.git</url>
+        <connection>scm:git:git@github.com:kciesielski/macmemo.git</connection>
+      </scm>
+        <developers>
+          <developer>
+            <id>kciesielski</id>
+            <name>Krzysztof Ciesielski</name>
+          </developer>
+        </developers>,
+    licenses      := ("Apache2", new java.net.URL("http://www.apache.org/licenses/LICENSE-2.0.txt")) :: Nil,
+    homepage      := Some(new java.net.URL("http://www.softwaremill.com")),
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M1" cross CrossVersion.full)
   )
 }
