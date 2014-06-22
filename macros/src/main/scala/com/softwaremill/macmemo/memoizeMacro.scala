@@ -1,7 +1,5 @@
 package com.softwaremill.macmemo
 
-import java.util.concurrent.TimeUnit
-
 import scala.concurrent.duration.FiniteDuration
 import scala.reflect.macros._
 
@@ -13,7 +11,7 @@ object memoizeMacro {
   def impl(c: blackbox.Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
     import c.universe._
 
-    case class MacroArgs(maxLength: Long, expireAfter: FiniteDuration, concurrencyLevel: Option[Int] = None)
+    case class MacroArgs(maxSize: Long, expireAfter: FiniteDuration, concurrencyLevel: Option[Int] = None)
 
     def reportInvalidAnnotationTarget() {
       c.error(c.enclosingPosition, "This annotation can only be used on methods")
@@ -39,7 +37,7 @@ object memoizeMacro {
 
     def createNewObj(name: TermName, returnTypeTree: Tree, macroArgs: MacroArgs) = {
       val objName = TermName(s"Memo_${name}_$uniqueNameCounter")
-      val maxLength = macroArgs.maxLength
+      val maxSize = macroArgs.maxSize
       val ttl = macroArgs.expireAfter
       val concurrencyLevelOpt = macroArgs.concurrencyLevel
       q"""
@@ -47,7 +45,7 @@ object memoizeMacro {
               import com.softwaremill.macmemo.DefMemo
 
                 lazy val memo = {
-                  new DefMemo[List[Any], List[$returnTypeTree]]($maxLength, ${ttl.toMillis}, $concurrencyLevelOpt)
+                  new DefMemo[List[Any], List[$returnTypeTree]]($maxSize, ${ttl.toMillis}, $concurrencyLevelOpt)
                 }
            }
       """
@@ -62,52 +60,56 @@ object memoizeMacro {
     def extractMacroArgs(application: Tree) = {
       debug(s"RAW application = ${reflect.runtime.universe.showRaw(application)}")
       val argsTree = application.children.head.children.head.children
-      val maxLength = extractMaxLength(argsTree(1))
+      val maxSize = extractMaxSize(argsTree(1))
       val ttl = extractTtl(argsTree(2))
       val concurrencyLevelOpt = argsTree match {
         case List(_, _, _, concurrencyLevelTree) => extractConcurrencyLevel(concurrencyLevelTree)
         case _ => None
       }
-      val args = MacroArgs(maxLength, ttl, concurrencyLevelOpt)
+      val args = MacroArgs(maxSize, ttl, concurrencyLevelOpt)
       debug(s"Macro args: $args")
       args
     }
 
-    def extractMaxLength(tree: Tree) = {
+    def extractMaxSize(tree: Tree) = {
       tree match {
-        case q"maxSize=$x" =>
-          c.error(c.enclosingPosition, "Cannot extract maxSize. Please do not use named parameters.")
-          0l
-        case _ =>
-          val length: Any = c.eval(c.Expr(tree))
-          length match {
-            case intLength: Int => intLength.toLong
-            case longLength: Long => longLength
-          }
+        case q"maxSize=$x" => evalLongExpr(x)
+        case _ => evalLongExpr(tree)
+      }
+    }
+
+    def evalLongExpr(tree: Tree) = {
+      val length: Any = c.eval(c.Expr(tree))
+      length match {
+        case intLength: Int => intLength.toLong
+        case longLength: Long => longLength
       }
     }
 
     def extractTtl(tree: Tree) = {
       tree match {
-        case q"expiresAfter=$x" =>
-          c.error(c.enclosingPosition, "Cannot extract expiresAfter. Please do not use named parameters.")
-          FiniteDuration(0, TimeUnit.SECONDS)
-        case _ =>
-          val t2 = q"import scala.concurrent.duration._; $tree"
-          val dur: FiniteDuration = c.eval(c.Expr(t2))
-          dur
+        case q"expiresAfter=$x" => evalFiniteDurationExpr(x)
+        case _ => evalFiniteDurationExpr(tree)
       }
+    }
+
+    def evalFiniteDurationExpr(tree: Tree) = {
+      val newTree = q"import scala.concurrent.duration._; $tree"
+      val dur: FiniteDuration = c.eval(c.Expr(newTree))
+      dur
+
     }
 
     def extractConcurrencyLevel(tree: Tree) = {
       tree match {
-        case q"concurrencyLevel=$x" =>
-          c.error(c.enclosingPosition, "Cannot extract concurrencyLevel. Please do not use named parameters.")
-          None
-        case _ =>
-          val level: Option[Int] = c.eval(c.Expr(tree))
-          level
+        case q"concurrencyLevel=$x" => evalOptionInt(x)
+        case _ => evalOptionInt(tree)
       }
+    }
+
+    def evalOptionInt(tree: Tree) = {
+      val value: Option[Int] = c.eval(c.Expr(tree))
+      value
     }
 
     val inputs = annottees.map(_.tree).toList
