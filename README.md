@@ -1,14 +1,25 @@
 MacMemo
 =======
 
-This is alpha release of MacMemo, a macro-based utility for function memoization.
+MacMemo is a simple library introducing `@memoize` macro annotation for simple function memoization. 
+Annotated functions are wrapped with boilerplate code which uses **Guava CacheBuilder** to save 
+returned values for given argument list.  
 
-Usage: Annotate function with @memoize to make it remember last 1000 calls for at most 5 seconds.
+Memoization is scoped for particular class instance.  
 
-Notice: Currently the memoization lasts only in object-scope, so calling the same function in different objects will not be remembered in same scope.
+Example usage:  
+````scala
+import scala.concurrent.duration._
+import com.softwaremill.macmemo.memoize
 
-TODO: 
-* Parametrization of buffer size and TTL
-* Check if it works for some nontrivial (traits, objects, recursion, closures, etc.)
-* Check how to keep cache in wider scope
-* Extend this README ;)
+class Worker {
+
+    @memoize(maxSize = 20000, expiresAfter = 2 hours)
+    def expensiveFunction(param: Int, param2: Seq[String]): ResultType = { ... }
+}
+````
+
+Parameters (for more details see [Guava docs](http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/cache/CacheBuilder.html)):
+* maxSize: Specifies the maximum number of entries the cache may contain.
+* expiresAfter: Specifies that each entry should be automatically removed from the cache once a fixed duration has elapsed after the entry's creation, or the most recent replacement of its value.
+* concurrencyLevel: Guides the allowed concurrency among update operations.
