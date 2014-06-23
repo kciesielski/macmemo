@@ -6,8 +6,6 @@ import scala.reflect.macros._
 object memoizeMacro {
   private val debug = new Debug()
 
-  var uniqueNameCounter: Int = 0
-
   def impl(c: blackbox.Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
     import c.universe._
 
@@ -17,14 +15,13 @@ object memoizeMacro {
       c.error(c.enclosingPosition, "This annotation can only be used on methods")
     }
 
-    def prepareInjectedBody(name: TermName, valDefs: List[List[ValDef]], bodyTree: Tree, returnTypeTree: Tree) = {
+    def prepareInjectedBody(newlyGeneratedObjName: TermName, valDefs: List[List[ValDef]], bodyTree: Tree, returnTypeTree: Tree) = {
 
       val names = valDefs.flatten.map(_.name)
-      val objName = TermName(s"Memo_${name}_$uniqueNameCounter")
       q"""
         import java.util.concurrent.Callable
 
-          $objName.memo.cache.get($names,
+          $newlyGeneratedObjName.memo.cache.get($names,
       new Callable[List[$returnTypeTree]] {
 
         override def call(): List[$returnTypeTree] = {
@@ -35,13 +32,12 @@ object memoizeMacro {
       }).head"""
     }
 
-    def createNewObj(name: TermName, returnTypeTree: Tree, macroArgs: MacroArgs) = {
-      val objName = TermName(s"Memo_${name}_$uniqueNameCounter")
+    def createNewObj(newlyGeneratedObjName: TermName, returnTypeTree: Tree, macroArgs: MacroArgs) = {
       val maxSize = macroArgs.maxSize
       val ttl = macroArgs.expireAfter
       val concurrencyLevelOpt = macroArgs.concurrencyLevel
       q"""
-           object $objName {
+           object $newlyGeneratedObjName {
               import com.softwaremill.macmemo.DefMemo
 
                 lazy val memo = {
@@ -51,9 +47,9 @@ object memoizeMacro {
       """
     }
 
-    def injectCacheUsage(function: DefDef) = {
+    def injectCacheUsage(newlyGeneratedObjName: TermName, function: DefDef) = {
       val DefDef(mods, name, tparams, valDefs, returnTypeTree, bodyTree) = function
-      val injectedBody = prepareInjectedBody(name, valDefs, bodyTree, returnTypeTree)
+      val injectedBody = prepareInjectedBody(newlyGeneratedObjName, valDefs, bodyTree, returnTypeTree)
       DefDef(mods, name, tparams, valDefs, returnTypeTree, injectedBody)
     }
 
@@ -117,15 +113,14 @@ object memoizeMacro {
       case (functionDefinition: DefDef) :: rest =>
         debug(s"Found annotated function [${functionDefinition.name}]")
         val DefDef(mods, name, tparams, valDefs, returnTypeTree, bodyTree) = functionDefinition
+        val newlyGeneratedObjName = c.freshName(s"Macro_${name}_")
         val macroArgs = extractMacroArgs(c.macroApplication)
-        val newObj = createNewObj(name, returnTypeTree, macroArgs)
+        val newObj = createNewObj(newlyGeneratedObjName, returnTypeTree, macroArgs)
         debug("annotations: " + functionDefinition.symbol.annotations)
-        val newFunctionDef = injectCacheUsage(functionDefinition)
+        val newFunctionDef = injectCacheUsage(newlyGeneratedObjName, functionDefinition)
         (functionDefinition, (newFunctionDef :: rest) :+ newObj)
       case _ => reportInvalidAnnotationTarget(); (EmptyTree, inputs)
     }
-    // TODO Check: Is this thread safe? Or maybe the compiler can run macros in parallel?
-    uniqueNameCounter = uniqueNameCounter + 1
 
     c.Expr[Any](Block(expandees, Literal(Constant(()))))
   }
