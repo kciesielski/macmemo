@@ -5,6 +5,8 @@ MacMemo is a simple library introducing `@memoize` macro annotation for simple f
 Annotated functions are wrapped with boilerplate code which uses **Guava CacheBuilder** to save 
 returned values for given argument list. Memoization is scoped for particular class instance.  
 
+Future versions may allow defining custom cache providers.
+
 **MacMemo requires Scala 2.11**
 
 Example usage:  
