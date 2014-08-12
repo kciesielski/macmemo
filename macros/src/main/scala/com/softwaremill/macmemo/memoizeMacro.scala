@@ -107,22 +107,26 @@ object memoizeMacro {
       val value: Option[Int] = c.eval(c.Expr(tree))
       value
     }
-
-    val inputs = annottees.map(_.tree).toList
-    val (_, expandees) = inputs match {
-      case (functionDefinition: DefDef) :: rest =>
-        debug(s"Found annotated function [${functionDefinition.name}]")
-        val DefDef(mods, name, tparams, valDefs, returnTypeTree, bodyTree) = functionDefinition
-        val newlyGeneratedObjName = c.freshName(s"Macro_${name}_")
-        val macroArgs = extractMacroArgs(c.macroApplication)
-        val newObj = createNewObj(newlyGeneratedObjName, returnTypeTree, macroArgs)
-        debug("annotations: " + functionDefinition.symbol.annotations)
-        val newFunctionDef = injectCacheUsage(newlyGeneratedObjName, functionDefinition)
-        (functionDefinition, (newFunctionDef :: rest) :+ newObj)
-      case _ => reportInvalidAnnotationTarget(); (EmptyTree, inputs)
+    if (System.getProperty("macmemo.disable") != null) {
+      annottees.head
     }
+    else {
+      val inputs = annottees.map(_.tree).toList
+      val (_, expandees) = inputs match {
+        case (functionDefinition: DefDef) :: rest =>
+          debug(s"Found annotated function [${functionDefinition.name}]")
+          val DefDef(mods, name, tparams, valDefs, returnTypeTree, bodyTree) = functionDefinition
+          val newlyGeneratedObjName = c.freshName(s"Macro_${name}_")
+          val macroArgs = extractMacroArgs(c.macroApplication)
+          val newObj = createNewObj(newlyGeneratedObjName, returnTypeTree, macroArgs)
+          debug("annotations: " + functionDefinition.symbol.annotations)
+          val newFunctionDef = injectCacheUsage(newlyGeneratedObjName, functionDefinition)
+          (functionDefinition, (newFunctionDef :: rest) :+ newObj)
+        case _ => reportInvalidAnnotationTarget(); (EmptyTree, inputs)
+      }
 
-    c.Expr[Any](Block(expandees, Literal(Constant(()))))
+      c.Expr[Any](Block(expandees, Literal(Constant(()))))
+    }
   }
 
 }

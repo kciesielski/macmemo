@@ -50,6 +50,13 @@ resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repos
 libraryDependencies += "com.softwaremill.macmemo" %% "macros" % "0.3-SNAPSHOT"
 ````
 
+Testability (version 0.3+)
+---------
+In order to disable MacMemo for tests, add following test options to your `buildSettings`:
+````scala
+testOptions in Test += Tests.Setup(() => System.setProperty("macmemo.disable", "true"))
+````
+
 Debugging
 ---------
 
