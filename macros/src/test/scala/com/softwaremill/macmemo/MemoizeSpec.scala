@@ -1,6 +1,6 @@
 package com.softwaremill.macmemo
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 
 import scala.concurrent.duration._
 import scala.util.Random
@@ -53,9 +53,13 @@ object ObjectWithMemos {
 
 class ClassWithTraitWithMemo extends TraitWithMemo
 
-class MemoizeSpec extends FlatSpec with Matchers {
+class MemoizeSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
 
   behavior of "@memoize macro"
+
+  override protected def beforeEach() {
+    System.clearProperty("macmemo.disable")
+  }
 
   it should "memoize for defined number of calls (unnamed args)" in {
     // given
@@ -71,6 +75,19 @@ class MemoizeSpec extends FlatSpec with Matchers {
     // then
     firstResult should equal(secondResult)
     secondResult should not equal resultAfterExceedingCapacity
+  }
+
+  it should "not memoize if macro is disabled by system property" in {
+    // given
+    val obj = new ClassWithMemos()
+    System.setProperty("macmemo.disable", "true")
+
+    // when
+    val firstResult = obj.methodShortBufferLongTime(15)
+    val secondResult = obj.methodShortBufferLongTime(15)
+
+    // then
+    firstResult should not equal secondResult
   }
 
   it should "memoize for defined number of calls (named args)" in {

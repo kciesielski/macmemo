@@ -15,21 +15,27 @@ object memoizeMacro {
       c.error(c.enclosingPosition, "This annotation can only be used on methods")
     }
 
-    def prepareInjectedBody(newlyGeneratedObjName: TermName, valDefs: List[List[ValDef]], bodyTree: Tree, returnTypeTree: Tree) = {
-
+    def prepareInjectedBody(newlyGeneratedObjName: TermName, valDefs: List[List[ValDef]], bodyTree: Tree,
+                            returnTypeTree: Tree) = {
       val names = valDefs.flatten.map(_.name)
       q"""
+      def callRealBody() = { $bodyTree }
+      if (System.getProperty("macmemo.disable") != null) {
+        callRealBody()
+      }
+      else {
         import java.util.concurrent.Callable
 
-          $newlyGeneratedObjName.memo.cache.get($names,
-      new Callable[List[$returnTypeTree]] {
+        $newlyGeneratedObjName.memo.cache.get($names,
+          new Callable[List[$returnTypeTree]] {
 
-        override def call(): List[$returnTypeTree] = {
-        List(
-            $bodyTree
-        )
-        }
-      }).head"""
+            override def call(): List[$returnTypeTree] = {
+              List(
+                callRealBody()
+              )
+            }
+          }).head
+      }"""
     }
 
     def createNewObj(newlyGeneratedObjName: TermName, returnTypeTree: Tree, macroArgs: MacroArgs) = {
@@ -107,26 +113,21 @@ object memoizeMacro {
       val value: Option[Int] = c.eval(c.Expr(tree))
       value
     }
-    if (System.getProperty("macmemo.disable") != null) {
-      annottees.head
+    val inputs = annottees.map(_.tree).toList
+    val (_, expandees) = inputs match {
+      case (functionDefinition: DefDef) :: rest =>
+        debug(s"Found annotated function [${functionDefinition.name}]")
+        val DefDef(mods, name, tparams, valDefs, returnTypeTree, bodyTree) = functionDefinition
+        val newlyGeneratedObjName = c.freshName(s"Macro_${name}_")
+        val macroArgs = extractMacroArgs(c.macroApplication)
+        val newObj = createNewObj(newlyGeneratedObjName, returnTypeTree, macroArgs)
+        debug("annotations: " + functionDefinition.symbol.annotations)
+        val newFunctionDef = injectCacheUsage(newlyGeneratedObjName, functionDefinition)
+        (functionDefinition, (newFunctionDef :: rest) :+ newObj)
+      case _ => reportInvalidAnnotationTarget(); (EmptyTree, inputs)
     }
-    else {
-      val inputs = annottees.map(_.tree).toList
-      val (_, expandees) = inputs match {
-        case (functionDefinition: DefDef) :: rest =>
-          debug(s"Found annotated function [${functionDefinition.name}]")
-          val DefDef(mods, name, tparams, valDefs, returnTypeTree, bodyTree) = functionDefinition
-          val newlyGeneratedObjName = c.freshName(s"Macro_${name}_")
-          val macroArgs = extractMacroArgs(c.macroApplication)
-          val newObj = createNewObj(newlyGeneratedObjName, returnTypeTree, macroArgs)
-          debug("annotations: " + functionDefinition.symbol.annotations)
-          val newFunctionDef = injectCacheUsage(newlyGeneratedObjName, functionDefinition)
-          (functionDefinition, (newFunctionDef :: rest) :+ newObj)
-        case _ => reportInvalidAnnotationTarget(); (EmptyTree, inputs)
-      }
 
-      c.Expr[Any](Block(expandees, Literal(Constant(()))))
-    }
+    c.Expr[Any](Block(expandees, Literal(Constant(()))))
   }
 
 }
