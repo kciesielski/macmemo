@@ -54,7 +54,9 @@ object MacMemoBuild extends Build {
         "org.scala-lang" % "scala-reflect" % ScalaVersion,
         "com.google.guava" % "guava" % "13.0.1",
         "com.google.code.findbugs" % "jsr305" % "1.3.+",
-        "org.scalatest" % "scalatest_2.11" % "2.2.0" % "test"))
+        "org.scalatest" % "scalatest_2.11" % "2.2.0" % "test"),
+      parallelExecution in Test := false
+    )
   )
 
   // Enabling debug project-wide. Can't find a better way to pass options to scalac.
