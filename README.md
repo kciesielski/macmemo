@@ -11,13 +11,15 @@ Future versions may allow defining custom cache providers.
 
 Example usage:  
 ````scala
-import scala.concurrent.duration._
 import com.softwaremill.macmemo.memoize
 
-class Worker {
+class GraphBuilder {
 
-    @memoize(maxSize = 20000, expiresAfter = 2 hours)
-    def expensiveFunction(param: Int, param2: Seq[String]): ResultType = { ... }
+  @memoize(maxSize = 20000, expiresAfter = 2 hours)
+  def creatGraph(elementCount: Int): Graph = {
+    someExpensiveCode()
+  }
+
 }
 ````
 
