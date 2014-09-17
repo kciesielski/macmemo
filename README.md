@@ -2,10 +2,9 @@ MacMemo
 =======
 
 MacMemo is a simple library introducing `@memoize` macro annotation for simple function memoization. 
-Annotated functions are wrapped with boilerplate code which uses **Guava CacheBuilder** to save 
-returned values for given argument list. Memoization is scoped for particular class instance.  
-
-Future versions may allow defining custom cache providers.
+Annotated functions are wrapped with boilerplate code which uses **Guava CacheBuilder** 
+(or any other cache implementation - see 'Custom memo cache builders' section) to save 
+returned values for given argument list. Memoization is scoped for particular class instance.    
 
 **MacMemo requires Scala 2.11**
 
@@ -65,6 +64,28 @@ Debugging
 The print debugging information on what MacMemo does when generating code, set the
 `macmemo.debug` system property. E.g. with SBT, just add a `System.setProperty("macmemo.debug", "")` line to your
 build file.
+
+Custom memo cache builders
+---------
+
+One may want to use more sophisticated cache provider, than simple Guava Cache. 
+It's possible to leverage any of existing cache providers like memcached or even NoSQL databases like Redis, 
+by bringing appropriate implicit `com.softwaremill.macmemo.MemoCacheBuilder` instance into 
+**memoized class scope** (the scope of the method definition, not it's usage, e.g: companion object, implicit val within class 
+or an explicit imports available in scope of class definition)
+ 
+See `MemoCacheBuilder.guavaMemoCacheBuilder` in `macmemo/macros/src/main/scala/com/softwaremill/macmemo/MemoCacheBuilder.scala`, 
+`macros/src/test/scala/com/softwaremill/macmemo/TestMemoCacheBuilder.scala` and  
+`macros/src/test/scala/com/softwaremill/macmemo/examples/MemoCacheBuilderResolutionSpec.scala` 
+for custom builder implementation and usage examples.
+
+Whenever custom memo builder cannot be found in class definition scope, appropriate compiler info message will be emitted:
+```
+[info] /path/to/sources/SomeFancyNamedFile.scala:42: Cannot find custom memo builder for method 'someMethodName' - default builder will be used
+[info]   @memoize(maxSize = 2, 15 days)
+[info]    ^
+```
+Currently there is no way to turn them off.
 
 Credits
 -------

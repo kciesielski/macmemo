@@ -11,12 +11,13 @@ object memoizeMacro {
 
     case class MacroArgs(maxSize: Long, expireAfter: FiniteDuration, concurrencyLevel: Option[Int] = None)
 
+    case class MemoIdentifier(methodName: TermName, generatedMemoValName: TermName)
+
     def reportInvalidAnnotationTarget() {
       c.error(c.enclosingPosition, "This annotation can only be used on methods")
     }
 
-    def prepareInjectedBody(newlyGeneratedObjName: TermName, valDefs: List[List[ValDef]], bodyTree: Tree,
-                            returnTypeTree: Tree) = {
+    def prepareInjectedBody(cachedMethodId: MemoIdentifier, valDefs: List[List[ValDef]], bodyTree: Tree, returnTypeTree: Tree): c.type#Tree = {
       val names = valDefs.flatten.map(_.name)
       q"""
       def callRealBody() = { $bodyTree }
@@ -24,38 +25,69 @@ object memoizeMacro {
         callRealBody()
       }
       else {
-        import java.util.concurrent.Callable
-
-        $newlyGeneratedObjName.memo.cache.get($names,
-          new Callable[List[$returnTypeTree]] {
-
-            override def call(): List[$returnTypeTree] = {
-              List(
-                callRealBody()
-              )
-            }
-          }).head
+        ${cachedMethodId.generatedMemoValName}.get($names, {
+          List(
+            callRealBody()
+          )
+        }).head.asInstanceOf[$returnTypeTree]
       }"""
     }
 
-    def createNewObj(newlyGeneratedObjName: TermName, returnTypeTree: Tree, macroArgs: MacroArgs) = {
-      val maxSize = macroArgs.maxSize
-      val ttl = macroArgs.expireAfter
-      val concurrencyLevelOpt = macroArgs.concurrencyLevel
-      q"""
-           object $newlyGeneratedObjName {
-              import com.softwaremill.macmemo.DefMemo
+    def createMemoVal(cachedMethodId: MemoIdentifier, returnTypeTree: Tree, macroArgs: MacroArgs): c.type#Tree = {
 
-                lazy val memo = {
-                  new DefMemo[List[Any], List[$returnTypeTree]]($maxSize, ${ttl.toMillis}, $concurrencyLevelOpt)
-                }
-           }
-      """
+      val enclosure = c.enclosingClass
+
+      def resolveMemoBuilder: Tree = {
+
+        def inferImplicitBuilderVal: Tree = {
+
+          def findImplicitBuilderVal(body: List[Tree]): Tree =
+            body.collect {
+              case v @ ValDef(m, name, _, rhs)
+                if (m.hasFlag(Flag.IMPLICIT) && c.typecheck(rhs).tpe <:< typeOf[MemoCacheBuilder]) =>
+                  Ident(name)
+            }.lastOption.getOrElse(EmptyTree)
+
+          enclosure match {
+            case ClassDef(_, _, _, Template(_, _, body)) => findImplicitBuilderVal(body)
+            case ModuleDef(_, _, Template(_, _, body)) => findImplicitBuilderVal(body)
+            case oth => EmptyTree
+          }
+        }
+
+        def bringDefaultBuilder: Tree = {
+          c.info(c.enclosingPosition, s"Cannot find custom memo builder for method '${cachedMethodId.methodName}' - default builder will be used", false)
+          reify {
+            MemoCacheBuilder.guavaMemoCacheBuilder
+          }.tree
+        }
+
+        c.inferImplicitValue(typeOf[MemoCacheBuilder]) orElse inferImplicitBuilderVal orElse bringDefaultBuilder
+      }
+
+      def buildCacheBucketId: Tree = {
+        val enclosingClassSymbol = enclosure.symbol
+        val enclosureFullName = enclosingClassSymbol.fullName + (if (enclosingClassSymbol.isModule) "$." else ".")
+        Literal(Constant(
+           enclosureFullName + cachedMethodId.methodName.toString))
+      }
+
+      def buildParams: Tree = {
+        val maxSize = macroArgs.maxSize
+        val ttl = macroArgs.expireAfter
+        val concurrencyLevelOpt = macroArgs.concurrencyLevel
+        q"""com.softwaremill.macmemo.MemoizeParams($maxSize, ${ttl.toMillis}, $concurrencyLevelOpt)"""
+      }
+
+      val t = appliedType(weakTypeOf[Cache[Any]].typeConstructor, typeOf[List[Any]] :: Nil)
+      ValDef(Modifiers(Flag.LAZY), cachedMethodId.generatedMemoValName, TypeTree(t),
+        Apply(Select(resolveMemoBuilder, TermName("build")), List(buildCacheBucketId, buildParams))
+      )
     }
 
-    def injectCacheUsage(newlyGeneratedObjName: TermName, function: DefDef) = {
+    def injectCacheUsage(cachedMethodId: MemoIdentifier, function: DefDef) = {
       val DefDef(mods, name, tparams, valDefs, returnTypeTree, bodyTree) = function
-      val injectedBody = prepareInjectedBody(newlyGeneratedObjName, valDefs, bodyTree, returnTypeTree)
+      val injectedBody = prepareInjectedBody(cachedMethodId, valDefs, bodyTree, returnTypeTree)
       DefDef(mods, name, tparams, valDefs, returnTypeTree, injectedBody)
     }
 
@@ -117,15 +149,16 @@ object memoizeMacro {
     val (_, expandees) = inputs match {
       case (functionDefinition: DefDef) :: rest =>
         debug(s"Found annotated function [${functionDefinition.name}]")
-        val DefDef(mods, name, tparams, valDefs, returnTypeTree, bodyTree) = functionDefinition
-        val newlyGeneratedObjName = c.freshName(s"Macro_${name}_")
+        val DefDef(_, name: TermName, _, _, returnTypeTree, _) = functionDefinition
+        val cachedMethodIdentifier = MemoIdentifier(name, TermName(c.freshName(s"memo_${name}_")))
         val macroArgs = extractMacroArgs(c.macroApplication)
-        val newObj = createNewObj(newlyGeneratedObjName, returnTypeTree, macroArgs)
-        debug("annotations: " + functionDefinition.symbol.annotations)
-        val newFunctionDef = injectCacheUsage(newlyGeneratedObjName, functionDefinition)
-        (functionDefinition, (newFunctionDef :: rest) :+ newObj)
+        val memoVal = createMemoVal(cachedMethodIdentifier, returnTypeTree, macroArgs)
+        val newFunctionDef = injectCacheUsage(cachedMethodIdentifier, functionDefinition)
+        (functionDefinition, (newFunctionDef :: rest) :+ memoVal)
       case _ => reportInvalidAnnotationTarget(); (EmptyTree, inputs)
     }
+
+    debug(s"final method = ${show(expandees)}")
 
     c.Expr[Any](Block(expandees, Literal(Constant(()))))
   }

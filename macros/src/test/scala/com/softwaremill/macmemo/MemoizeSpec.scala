@@ -21,6 +21,7 @@ class ClassWithMemos {
 
 }
 
+
 trait TraitWithMemo {
 
   @memoize(2, 5 days)
@@ -39,7 +40,9 @@ object ObjectWithMemos {
   def publicDef(param: Int, param2: Int) = privateDef(param, param2)
 
   @memoize(maxSize = 2, 15 days)
-  private def privateDef(param: Int, param2: Int) = { param * param2 * Random.nextInt(5438987)}
+  private def privateDef(param: Int, param2: Int) = {
+    param * param2 * Random.nextInt(5438987)
+  }
 
   @memoize(maxSize = 3, expiresAfter = 1 day)
   def recursive(param: Int): Int = {
@@ -50,7 +53,6 @@ object ObjectWithMemos {
 }
 
 
-
 class ClassWithTraitWithMemo extends TraitWithMemo
 
 class MemoizeSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
@@ -59,22 +61,6 @@ class MemoizeSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
 
   override protected def beforeEach() {
     System.clearProperty("macmemo.disable")
-  }
-
-  it should "memoize for defined number of calls (unnamed args)" in {
-    // given
-    val obj = new ClassWithMemos()
-
-    // when
-    val firstResult = obj.methodShortBufferLongTime(15)
-    val secondResult = obj.methodShortBufferLongTime(15)
-    obj.methodShortBufferLongTime(20)
-    obj.methodShortBufferLongTime(21)
-    val resultAfterExceedingCapacity = obj.methodShortBufferLongTime(15)
-
-    // then
-    firstResult should equal(secondResult)
-    secondResult should not equal resultAfterExceedingCapacity
   }
 
   it should "not memoize if macro is disabled by system property" in {
