@@ -6,7 +6,7 @@ object BuildSettings {
 
   val buildSettings = Defaults.coreDefaultSettings ++ Seq(
     organization := "com.softwaremill.macmemo",
-    version := "0.3-SNAPSHOT",
+    version := "0.3",
     scalacOptions ++= Seq(),
     scalaVersion := ScalaVersion,
     // Sonatype OSS deployment
