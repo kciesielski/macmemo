@@ -34,7 +34,7 @@ The jars are deployed to [Sonatype's OSS repository](https://oss.sonatype.org/co
 To use MacMemo in your project, add a dependency:
 
 ````scala
-libraryDependencies += "com.softwaremill.macmemo" %% "macros" % "0.2"
+libraryDependencies += "com.softwaremill.macmemo" %% "macros" % "0.3"
 ````
 
 You also need to add a special compiler plugin to your `buildSettings`:
@@ -48,10 +48,10 @@ To use the snapshot version:
 ````scala
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
-libraryDependencies += "com.softwaremill.macmemo" %% "macros" % "0.3-SNAPSHOT"
+libraryDependencies += "com.softwaremill.macmemo" %% "macros" % "0.4-SNAPSHOT"
 ````
 
-Testability (version 0.3+)
+Testability
 ---------
 In order to disable MacMemo for tests, add following test options to your `buildSettings`:
 ````scala
