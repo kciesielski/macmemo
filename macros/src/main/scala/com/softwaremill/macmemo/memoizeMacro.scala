@@ -37,34 +37,6 @@ object memoizeMacro {
 
       val enclosure = c.enclosingClass
 
-      def resolveMemoBuilder: Tree = {
-
-        def inferImplicitBuilderVal: Tree = {
-
-          def findImplicitBuilderVal(body: List[Tree]): Tree =
-            body.collect {
-              case v @ ValDef(m, name, _, rhs)
-                if (m.hasFlag(Flag.IMPLICIT) && c.typecheck(rhs).tpe <:< typeOf[MemoCacheBuilder]) =>
-                  Ident(name)
-            }.lastOption.getOrElse(EmptyTree)
-
-          enclosure match {
-            case ClassDef(_, _, _, Template(_, _, body)) => findImplicitBuilderVal(body)
-            case ModuleDef(_, _, Template(_, _, body)) => findImplicitBuilderVal(body)
-            case oth => EmptyTree
-          }
-        }
-
-        def bringDefaultBuilder: Tree = {
-          c.info(c.enclosingPosition, s"Cannot find custom memo builder for method '${cachedMethodId.methodName}' - default builder will be used", false)
-          reify {
-            MemoCacheBuilder.guavaMemoCacheBuilder
-          }.tree
-        }
-
-        c.inferImplicitValue(typeOf[MemoCacheBuilder]) orElse inferImplicitBuilderVal orElse bringDefaultBuilder
-      }
-
       def buildCacheBucketId: Tree = {
         val enclosingClassSymbol = enclosure.symbol
         val enclosureFullName = enclosingClassSymbol.fullName + (if (enclosingClassSymbol.isModule) "$." else ".")
@@ -79,10 +51,9 @@ object memoizeMacro {
         q"""com.softwaremill.macmemo.MemoizeParams($maxSize, ${ttl.toMillis}, $concurrencyLevelOpt)"""
       }
 
-      val t = appliedType(weakTypeOf[Cache[Any]].typeConstructor, typeOf[List[Any]] :: Nil)
-      ValDef(Modifiers(Flag.LAZY), cachedMethodId.generatedMemoValName, TypeTree(t),
-        Apply(Select(resolveMemoBuilder, TermName("build")), List(buildCacheBucketId, buildParams))
-      )
+      q"""lazy val ${cachedMethodId.generatedMemoValName}: com.softwaremill.macmemo.Cache[List[Any]] =
+         com.softwaremill.macmemo.BuilderResolver.resolve($buildCacheBucketId).build($buildCacheBucketId, $buildParams)"""
+
     }
 
     def injectCacheUsage(cachedMethodId: MemoIdentifier, function: DefDef) = {
