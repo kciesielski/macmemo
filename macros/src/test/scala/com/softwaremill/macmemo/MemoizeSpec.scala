@@ -50,8 +50,19 @@ object ObjectWithMemos {
       Random.nextInt(20000)
     else param + recursive(param - 1)
   }
+
+  @memoize(maxSize = 2, 15 days)
+  def withImplicitArg(implicit param: Int, param2: Double) = {
+    param * param2 * Random.nextInt(348574)
+  }
+
+  @memoize(maxSize = 2000, 15 days)
+  def withUndefinedEqualsArg(param: ClassWithUndefinedEqualsAndHashCode) = {
+    param.someInt * Random.nextLong()
+  }
 }
 
+class ClassWithUndefinedEqualsAndHashCode(val someInt: Int)
 
 class ClassWithTraitWithMemo extends TraitWithMemo
 
@@ -188,4 +199,35 @@ class MemoizeSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
     secondResult should not equal resultAfterExceedingCapacity
   }
 
+  it should "memoize for implicit function arguments" in {
+    // given
+    import ObjectWithMemos._
+    implicit val implArg1: Int = 16
+    implicit val implArg2: Double = 16.0
+
+    // when
+    val firstResult = withImplicitArg
+    val secondResult = withImplicitArg
+    withImplicitArg(17,16.0)
+    withImplicitArg(18,16.0)
+    val resultAfterExceedingCapacity = withImplicitArg
+
+    // then
+    firstResult should equal(secondResult)
+    secondResult should not equal resultAfterExceedingCapacity
+  }
+
+  it should "fail to memoize if function argument has undefined equals + hashcode" in {
+    // given
+    import ObjectWithMemos._
+    val param = new ClassWithUndefinedEqualsAndHashCode(15)
+    val param2 = new ClassWithUndefinedEqualsAndHashCode(15)
+
+    // when
+    val firstResult = withUndefinedEqualsArg(param)
+    val secondResult = withUndefinedEqualsArg(param2)
+
+    // then
+    firstResult should not equal secondResult
+  }
 }
