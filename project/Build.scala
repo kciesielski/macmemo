@@ -2,7 +2,7 @@ import sbt._
 import Keys._
 
 object BuildSettings {
-  val ScalaVersion = "2.11.1"
+  val ScalaVersion = "2.11.5"
 
   val buildSettings = Defaults.coreDefaultSettings ++ Seq(
     organization := "com.softwaremill.macmemo",
@@ -34,7 +34,7 @@ object BuildSettings {
         </developers>,
     licenses      := ("Apache2", new java.net.URL("http://www.apache.org/licenses/LICENSE-2.0.txt")) :: Nil,
     homepage      := Some(new java.net.URL("http://www.softwaremill.com")),
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M1" cross CrossVersion.full)
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M3" cross CrossVersion.full)
   )
 }
 
