@@ -1,5 +1,6 @@
 MacMemo
 =======
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.macmemo/macros_2.11/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.macmemo/macros_2.11)  
 
 MacMemo is a simple library introducing `@memoize` macro annotation for simple function memoization. 
 Annotated functions are wrapped with boilerplate code which uses **Guava CacheBuilder** 
