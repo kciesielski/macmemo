@@ -34,7 +34,7 @@ object BuildSettings {
         </developers>,
     licenses      := ("Apache2", new java.net.URL("http://www.apache.org/licenses/LICENSE-2.0.txt")) :: Nil,
     homepage      := Some(new java.net.URL("http://www.softwaremill.com")),
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M3" cross CrossVersion.full)
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M5" cross CrossVersion.full)
   )
 }
 
