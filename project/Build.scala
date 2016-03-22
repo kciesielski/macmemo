@@ -34,7 +34,7 @@ object BuildSettings {
         </developers>,
     licenses      := ("Apache2", new java.net.URL("http://www.apache.org/licenses/LICENSE-2.0.txt")) :: Nil,
     homepage      := Some(new java.net.URL("http://www.softwaremill.com")),
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M5" cross CrossVersion.full)
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
   )
 }
 
@@ -53,8 +53,8 @@ object MacMemoBuild extends Build {
       libraryDependencies ++= Seq(
         "org.scala-lang" % "scala-reflect" % ScalaVersion,
         "com.google.guava" % "guava" % "13.0.1",
-        "com.google.code.findbugs" % "jsr305" % "1.3.+",
-        "org.scalatest" % "scalatest_2.11" % "2.2.0" % "test"
+        "com.google.code.findbugs" % "jsr305" % "1.3.9",
+        "org.scalatest" % "scalatest_2.11" % "2.2.6" % "test"
       ),
       parallelExecution in Test := false,
       scalacOptions := Seq("-feature", "-deprecation")
