@@ -35,10 +35,8 @@ object memoizeMacro {
 
     def createMemoVal(cachedMethodId: MemoIdentifier, returnTypeTree: Tree, macroArgs: MacroArgs): c.type#Tree = {
 
-      val enclosure = c.enclosingClass
-
       def buildCacheBucketId: Tree = {
-        val enclosingClassSymbol = enclosure.symbol
+        val enclosingClassSymbol = c.internal.enclosingOwner
         val enclosureFullName = enclosingClassSymbol.fullName + (if (enclosingClassSymbol.isModule) "$." else ".")
         Literal(Constant(
            enclosureFullName + cachedMethodId.methodName.toString))
