@@ -41,7 +41,7 @@ libraryDependencies += "com.softwaremill.macmemo" %% "macros" % "0.3"
 You also need to add a special compiler plugin to your `buildSettings`:
 
 ````scala
-addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M1" cross CrossVersion.full)
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 ````
 
 To use the snapshot version:
