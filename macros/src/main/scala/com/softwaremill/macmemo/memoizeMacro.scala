@@ -37,7 +37,7 @@ object memoizeMacro {
 
       def buildCacheBucketId: Tree = {
         val enclosingClassSymbol = c.internal.enclosingOwner
-        val enclosureFullName = enclosingClassSymbol.fullName + (if (enclosingClassSymbol.isModule) "$." else ".")
+        val enclosureFullName = enclosingClassSymbol.fullName + (if (enclosingClassSymbol.isModuleClass) "$." else ".")
         Literal(Constant(
            enclosureFullName + cachedMethodId.methodName.toString))
       }
