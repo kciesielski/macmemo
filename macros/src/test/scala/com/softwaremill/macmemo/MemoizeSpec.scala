@@ -3,6 +3,7 @@ package com.softwaremill.macmemo
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 
 import scala.concurrent.duration._
+import scala.language.postfixOps
 import scala.util.Random
 
 class ClassWithMemos {
@@ -197,6 +198,16 @@ class MemoizeSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
     // then
     firstResult should equal(secondResult)
     secondResult should not equal resultAfterExceedingCapacity
+  }
+
+  it should "work with type inference and breakOut" in {
+    import scala.collection.breakOut
+
+    @memoize(maxSize = 10, expiresAfter = 12 hours)
+    def getAsList(intsIn: Iterable[Int]): List[Int] = intsIn.map { c => c }(breakOut)
+
+    val myInts = Seq(1, 2, 3, 4, 5)
+    getAsList(myInts).foreach(ii => println(ii))
   }
 
   it should "memoize for implicit function arguments" in {

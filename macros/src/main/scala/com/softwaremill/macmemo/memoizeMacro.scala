@@ -20,7 +20,7 @@ object memoizeMacro {
     def prepareInjectedBody(cachedMethodId: MemoIdentifier, valDefs: List[List[ValDef]], bodyTree: Tree, returnTypeTree: Tree): c.type#Tree = {
       val names = valDefs.flatten.map(_.name)
       q"""
-      def callRealBody() = { $bodyTree }
+      def callRealBody(): $returnTypeTree = { $bodyTree }
       if (System.getProperty("macmemo.disable") != null) {
         callRealBody()
       }
