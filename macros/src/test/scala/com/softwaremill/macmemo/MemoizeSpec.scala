@@ -207,7 +207,7 @@ class MemoizeSpec extends FlatSpec with Matchers with BeforeAndAfterEach {
     def getAsList(intsIn: Iterable[Int]): List[Int] = intsIn.map { c => c }(breakOut)
 
     val myInts = Seq(1, 2, 3, 4, 5)
-    getAsList(myInts).foreach(ii => println(ii))
+    getAsList(myInts).foreach(ii => ()) // should compile
   }
 
   it should "memoize for implicit function arguments" in {
