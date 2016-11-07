@@ -1,7 +1,7 @@
 MacMemo
 =======
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.macmemo/macros_2.11/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.macmemo/macros_2.11)  
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.macmemo/macros_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.softwaremill.macmemo/macros_2.12)  
 [![Build Status](https://travis-ci.org/kciesielski/macmemo.svg?branch=master)](https://travis-ci.org/kciesielski/macmemo)
 
 MacMemo is a simple library introducing `@memoize` macro annotation for simple function memoization. 
@@ -9,7 +9,7 @@ Annotated functions are wrapped with boilerplate code which uses **Guava CacheBu
 (or any other cache implementation - see 'Custom memo cache builders' section) to save 
 returned values for given argument list. Memoization is scoped for particular class instance.    
 
-**MacMemo requires Scala 2.11**
+**Available for Scala 2.11 and 2.12**
 
 Example usage:  
 ````scala

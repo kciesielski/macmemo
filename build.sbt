@@ -5,7 +5,7 @@ import Keys._
 
   val buildSettings = Defaults.coreDefaultSettings ++ Seq(
     organization := "com.softwaremill.macmemo",
-    version := "0.4-SNAPSHOT",
+    version := "0.3",
     scalacOptions ++= Seq(),
     crossScalaVersions := Seq("2.11.8", "2.12.0"),
     scalaVersion := ScalaVersion,
@@ -40,7 +40,8 @@ import Keys._
 
   lazy val root: Project = Project(
     "root",
-    file(".")
+    file("."),
+    settings = buildSettings
   ) aggregate macros
 
   lazy val macros: Project = Project(
