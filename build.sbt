@@ -12,6 +12,7 @@ import Keys._
   )
 
   lazy val root: Project = (project in file("."))
+    .settings(publishArtifact := false, name := "macmemo")
     .settings(buildSettings)
     .aggregate(macros)
 
