@@ -13,7 +13,7 @@ object memoizeMacro {
 
     case class MemoIdentifier(methodName: TermName, generatedMemoValName: TermName)
 
-    def reportInvalidAnnotationTarget() {
+    def reportInvalidAnnotationTarget(): Unit = {
       c.error(c.enclosingPosition, "This annotation can only be used on methods")
     }
 

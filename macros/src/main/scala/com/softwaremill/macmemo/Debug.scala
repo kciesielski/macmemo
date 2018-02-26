@@ -6,7 +6,7 @@ package com.softwaremill.macmemo
 private[macmemo] class Debug {
   var ident = 0
 
-  def apply(msg: => String) {
+  def apply(msg: => String): Unit = {
     if (enabled) {
       val prefix = "   " * ident
       println(s"$prefix[debug] $msg")
@@ -23,11 +23,11 @@ private[macmemo] class Debug {
     }
   }
 
-  def beginBlock() {
+  def beginBlock(): Unit = {
     ident += 1
   }
 
-  def endBlock() {
+  def endBlock(): Unit = {
     ident -= 1
   }
 

@@ -11,7 +11,6 @@ import Keys._
     addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
   )
 
-
   lazy val root: Project = (project in file("."))
     .settings(buildSettings)
     .aggregate(macros)
@@ -20,14 +19,13 @@ import Keys._
     .settings(buildSettings ++ Seq(
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % ScalaVersion,
-      "com.google.guava" % "guava" % "13.0.1",
-      "com.google.code.findbugs" % "jsr305" % "1.3.9",
-      "org.scalatest" %% "scalatest" % "3.0.0" % "test"
+      "com.google.guava" % "guava" % "23.0",
+      "com.google.code.findbugs" % "jsr305" % "3.0.2",
+      "org.scalatest" %% "scalatest" % "3.0.5" % "test"
       ),
     parallelExecution in Test := false,
-    scalacOptions := Seq("-feature", "-deprecation"),
     testOptions in Test += Tests.Setup( () => System.setProperty("macmemo.debug", "true"))
-    )
+    ) ++ dependencyUpdatesSettings ++ ossPublishSettings
   )
 
 
