@@ -5,7 +5,6 @@ import Keys._
 
   val buildSettings = Defaults.coreDefaultSettings ++ Seq(
     organization := "com.softwaremill.macmemo",
-    version := "0.3",
     scalacOptions ++= Seq(),
     crossScalaVersions := Seq("2.11.8", "2.12.0"),
     scalaVersion := ScalaVersion,
@@ -38,25 +37,21 @@ import Keys._
   )
 
 
-  lazy val root: Project = Project(
-    "root",
-    file("."),
-    settings = buildSettings
-  ) aggregate macros
+  lazy val root: Project = (project in file("."))
+    .settings(buildSettings)
+    .aggregate(macros)
 
-  lazy val macros: Project = Project(
-    "macros",
-    file("macros"),
-    settings = buildSettings ++ Seq(
-      libraryDependencies ++= Seq(
-        "org.scala-lang" % "scala-reflect" % ScalaVersion,
-        "com.google.guava" % "guava" % "13.0.1",
-        "com.google.code.findbugs" % "jsr305" % "1.3.9",
-        "org.scalatest" %% "scalatest" % "3.0.0" % "test"
+  lazy val macros: Project = (project in file("macros"))
+    .settings(buildSettings ++ Seq(
+    libraryDependencies ++= Seq(
+      "org.scala-lang" % "scala-reflect" % ScalaVersion,
+      "com.google.guava" % "guava" % "13.0.1",
+      "com.google.code.findbugs" % "jsr305" % "1.3.9",
+      "org.scalatest" %% "scalatest" % "3.0.0" % "test"
       ),
-      parallelExecution in Test := false,
-      scalacOptions := Seq("-feature", "-deprecation"),
-      testOptions in Test += Tests.Setup( () => System.setProperty("macmemo.debug", "true"))
+    parallelExecution in Test := false,
+    scalacOptions := Seq("-feature", "-deprecation"),
+    testOptions in Test += Tests.Setup( () => System.setProperty("macmemo.debug", "true"))
     )
   )
 
