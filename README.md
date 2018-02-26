@@ -46,14 +46,6 @@ You also need to add a special compiler plugin to your `buildSettings`:
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 ````
 
-To use the snapshot version:
-
-````scala
-resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
-
-libraryDependencies += "com.softwaremill.macmemo" %% "macros" % "0.4-SNAPSHOT"
-````
-
 Testability
 ---------
 In order to disable MacMemo for tests, add following test options to your `buildSettings`:
